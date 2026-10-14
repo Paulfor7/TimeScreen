@@ -1,0 +1,21 @@
+node_modules/
+dist/
+release/
+test-results/
+.local/
+
+# Local screenshots, exports and upload bundles
+artifacts/
+github-upload/
+.env
+.env.*
+!.env.example
+*.log
+*.lnk
+*.bak
+*.tmp
+timescreen.json
+timescreen*.csv
+timescreen-backup*.json
+.DS_Store
+Thumbs.db
