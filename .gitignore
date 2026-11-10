@@ -19,3 +19,4 @@ timescreen*.csv
 timescreen-backup*.json
 .DS_Store
 Thumbs.db
+reports/
