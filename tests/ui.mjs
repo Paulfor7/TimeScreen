@@ -6,10 +6,10 @@ const page=await browser.newPage({viewport:{width:1440,height:1080}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.clock.install();
 await page.goto('http://127.0.0.1:5173');
-await page.getByRole('button',{name:'创建第一个项目'}).click();
+await page.getByRole('button',{name:'创建第一个事件'}).click();
 await page.locator('#project-name').fill('产品设计');
 await page.locator('#project-description').fill('把想法变成可用的作品');
-await page.getByRole('button',{name:'创建项目',exact:false}).click();
+await page.getByRole('button',{name:'创建事件',exact:false}).click();
 await page.getByRole('button',{name:'正向计时',exact:true}).click();
 await page.locator('#pomodoro').uncheck();
 await page.getByRole('button',{name:'开始专注',exact:true}).click();
@@ -21,8 +21,8 @@ assert.equal(await page.locator('#clock').textContent(),paused);
 await page.getByRole('button',{name:'继续专注',exact:true}).click();
 await page.clock.fastForward(35000);
 await page.getByTitle('完成并保存').click();
-await page.getByRole('button',{name:'我的项目',exact:true}).click();
-await page.getByRole('button',{name:'归档',exact:true}).click();
+await page.getByRole('button',{name:'事件与项目',exact:true}).click();
+await page.getByRole('button',{name:'归档事件',exact:true}).click();
 await page.getByRole('button',{name:'时间统计',exact:true}).click();
 assert.ok(await page.locator('.legend').textContent().then(s=>s.includes('产品设计')));
 assert.ok(await page.locator('.legend').textContent().then(s=>s.includes('已归档')));
@@ -34,9 +34,9 @@ await page.getByRole('button',{name:'保存备注'}).click();
 await page.reload();
 await page.getByRole('button',{name:'专注记录',exact:true}).click();
 assert.ok(await page.locator('.record-card').textContent().then(t=>t.includes('第一步完成')));
-await page.getByRole('button',{name:'我的项目',exact:true}).click();
+await page.getByRole('button',{name:'事件与项目',exact:true}).click();
 await page.getByRole('button',{name:/已归档/}).click();
-await page.getByRole('button',{name:'恢复项目'}).click();
+await page.getByRole('button',{name:'恢复事件'}).click();
 await page.getByRole('button',{name:'专注时刻',exact:true}).click();
 
 await page.locator('#duration').fill('1');await page.locator('#duration').blur();
@@ -51,7 +51,7 @@ await page.getByRole('button',{name:'结束休息'}).click();
 await page.getByRole('button',{name:'开始专注',exact:true}).click();
 await page.clock.fastForward(10000);await page.reload();
 assert.equal(await page.getByRole('button',{name:'继续专注',exact:true}).count(),1);
-await page.getByTitle('提前结束').click();await page.getByRole('button',{name:'保存并结束'}).click();
+await page.getByTitle('放弃本次').click();await page.getByRole('button',{name:'确认放弃'}).click();
 await page.getByRole('button',{name:'偏好设置',exact:true}).click();
 await page.locator('[data-setting="dailyGoal"]').fill('90');await page.locator('[data-setting="dailyGoal"]').blur();
 await page.locator('#background-file').setInputFiles({name:'test.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aRk0AAAAASUVORK5CYII=','base64')});
@@ -59,15 +59,15 @@ await page.waitForFunction(()=>document.body.classList.contains('custom-bg'));
 await page.getByRole('button',{name:'恢复默认',exact:true}).click();
 assert.equal(await page.locator('body.custom-bg').count(),0);
 saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('timescreen-v1')));
-assert.equal(saved.settings.dailyGoal,90);assert.equal(saved.sessions.length,3);
+assert.equal(saved.settings.dailyGoal,90);assert.equal(saved.sessions.length,2);
 const backupDownload=page.waitForEvent('download');
 await page.getByRole('button',{name:'导出备份',exact:true}).click();
 const backup=await backupDownload;
 const exported=JSON.parse(fs.readFileSync(await backup.path(),'utf8'));
-assert.equal(exported.sessions.length,3);assert.equal(exported.active,null);
+assert.equal(exported.sessions.length,2);assert.equal(exported.active,null);
 await page.locator('#import-file').setInputFiles({name:'backup.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(exported))});
 await page.getByRole('button',{name:'替换并恢复',exact:true}).click();
-assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('timescreen-v1')).sessions.length),3);
+assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('timescreen-v1')).sessions.length),2);
 await page.getByRole('button',{name:'时间统计',exact:true}).click();
 assert.ok((await page.locator('.metric').nth(3).textContent()).includes('2 次完成'));
 const csvDownload=page.waitForEvent('download');
@@ -78,12 +78,12 @@ assert.deepEqual(errors,[]);
 fs.mkdirSync('artifacts',{recursive:true});
 await page.getByRole('button',{name:'专注时刻',exact:true}).click();
 await page.screenshot({path:'artifacts/focus.png',fullPage:true,animations:'disabled'});
-for(const name of ['我的项目','时间统计','专注记录','偏好设置']){
+for(const name of ['事件与项目','时间统计','专注记录','偏好设置']){
   await page.getByRole('button',{name,exact:true}).click();
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${name} must not overflow`);
 }
 await page.setViewportSize({width:1024,height:740});
-for(const name of ['专注时刻','我的项目','时间统计','专注记录','偏好设置']){
+for(const name of ['专注时刻','事件与项目','时间统计','专注记录','偏好设置']){
   await page.getByRole('button',{name,exact:true}).click();
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${name} must not overflow at 1024px`);
 }

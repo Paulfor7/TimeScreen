@@ -13,7 +13,7 @@ const options={executablePath:path.resolve(packaged?'release/win-unpacked/TimeSc
 let app=await electron.launch(options),page=await app.firstWindow();
 await page.waitForFunction(()=>document.body.classList.contains('custom-bg'));
 assert.equal(await page.evaluate(()=>document.body.style.getPropertyValue('--veil')),'0.45');
-await page.getByTitle('编辑项目').click();
+await page.getByTitle('编辑事件').click();
 await page.locator('#project-logo-file').setInputFiles('assets/icon.png');
 await page.waitForFunction(()=>document.querySelector('#logo-preview img')?.naturalWidth>0);
 await page.getByRole('button',{name:'保存修改'}).click();

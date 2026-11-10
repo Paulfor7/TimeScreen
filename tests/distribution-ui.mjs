@@ -1,0 +1,26 @@
+import {_electron as electron} from '@playwright/test';
+import fs from 'node:fs';import path from 'node:path';import assert from 'node:assert/strict';
+import {initialData,dateKey,validateData} from '../src/model.js';
+const root=path.resolve('.local/chart-fix-'+Date.now());fs.mkdirSync(root,{recursive:true});
+const d=initialData();d.folders=[{id:'blender',name:'blender练习',color:'#dca06e'}];d.projects=[{id:'donut',name:'甜甜圈练习',color:'#dca06e',parentId:'blender',icon:'palette'},{id:'chair',name:'椅子练习',color:'#7b8cde',parentId:'blender',icon:'palette'},{id:'ai',name:'AI建模教程',color:'#7b8cde',icon:'graduation-cap'},{id:'tools',name:'工具尝试',color:'#7b8cde',icon:'folder'}];
+const day=new Date();day.setDate(day.getDate()-1);day.setHours(0,0,0,0);
+d.sessions=d.projects.map((e,i)=>{const start=+day+[8,16,17,19][i]*3600000,end=start+[25830,90,5910,2370][i]*1000;return{id:'s'+i,projectId:e.id,startedAt:start,endedAt:end,segments:[{start,end}],mode:'up',status:'completed'};});
+const file=path.join(root,'timescreen.json');fs.writeFileSync(file,JSON.stringify(d));
+const packaged=process.env.TEST_PACKAGED==='1',opts={executablePath:path.resolve(packaged?'release/win-unpacked/TimeScreen.exe':'node_modules/electron/dist/electron.exe'),args:packaged?[]:['.'],env:{...process.env,TIMESCREEN_DATA_DIR:root}};
+let app=await electron.launch(opts),page=await app.firstWindow();
+await page.getByRole('heading',{name:'事件与项目',exact:false}).waitFor();assert.equal(await page.locator('.event-row select').count(),0);
+await page.locator('[data-event-id="ai"]').getByTitle('编辑事件').click();assert.equal(await page.locator('#event-parent').count(),1);await page.getByRole('button',{name:'取消',exact:true}).click();
+await page.getByRole('button',{name:'时间统计',exact:true}).click();await page.getByRole('button',{name:'按日统计',exact:true}).click();await page.locator('#stats-date').fill(dateKey(day));await page.locator('#stats-date').dispatchEvent('change');
+await page.getByLabel('周期统计层级').selectOption('all');assert.equal(await page.locator('.project-sector').count(),1);assert.equal(await page.locator('.child-sector').count(),2);assert.equal(await page.locator('.legend-project .legend-child').count(),2);
+const rootArc=await page.locator('.project-sector').evaluate(e=>({...e.dataset,fill:e.getAttribute('fill')}));
+const children=await page.locator('.child-sector').evaluateAll(es=>es.map(e=>({...e.dataset,fill:e.getAttribute('fill')})));
+for(const child of children){assert.equal(child.parentId,'blender');assert.ok(+child.start>=+rootArc.start&&+child.end<=+rootArc.end);assert.ok(+child.inner>+rootArc.inner&&+child.outer<+rootArc.outer);assert.notEqual(child.fill,rootArc.fill);}
+const allColors=await page.locator('.distribution-sector').evaluateAll(es=>es.map(e=>e.getAttribute('fill')));assert.equal(new Set(allColors).size,5);
+const eventColors=await page.locator('.distribution-sector[data-sector-kind="event"]').evaluateAll(es=>Object.fromEntries(es.map(e=>[e.dataset.sectorId,e.getAttribute('fill')])));
+fs.mkdirSync('artifacts',{recursive:true});await page.screenshot({path:'artifacts/distribution-fixed.png',fullPage:true,animations:'disabled'});
+await page.getByLabel('周期统计层级').selectOption('events');const flatColors=await page.locator('.distribution-sector').evaluateAll(es=>Object.fromEntries(es.map(e=>[e.dataset.sectorId,e.getAttribute('fill')])));assert.deepEqual(flatColors,eventColors);
+await page.getByLabel('周期统计层级').selectOption('projects');assert.equal(await page.locator('.distribution-sector').count(),3);assert.equal(await page.locator('.child-sector').count(),0);
+await page.getByRole('button',{name:'专注时刻',exact:true}).click();await page.locator('[data-event-id="ai"]').dragTo(page.locator('[data-drop-folder="blender"] .folder-heading'));await page.waitForFunction(()=>window.desktop.load().then(d=>d.projects.find(e=>e.id==='ai').parentId==='blender'));assert.equal(await page.locator('.event-row select').count(),0);
+await page.locator('[data-event-id="ai"]').getByTitle('编辑事件').click();await page.locator('#event-parent').selectOption('');await page.getByRole('button',{name:'保存修改',exact:true}).click();
+await page.evaluate(()=>window.close());await new Promise(r=>app.process().once('exit',r));const saved=JSON.parse(fs.readFileSync(file,'utf8'));validateData(saved);assert.equal(saved.projects.find(e=>e.id==='ai').parentId,null);assert.deepEqual(saved.sessions,d.sessions);
+app=await electron.launch(opts);page=await app.firstWindow();await page.getByRole('heading',{name:'事件与项目',exact:false}).waitFor();const colors=await page.evaluate(()=>window.desktop.load().then(d=>d.settings.chartColors));assert.deepEqual(colors,saved.settings.chartColors);await app.close();console.log('Distribution fix passed: distinct persistent colors, child sectors contained by parent, grouped legend, three views, no inline selectors, edit/drag movement, restart.');

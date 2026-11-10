@@ -8,8 +8,8 @@ const root=path.resolve('.local/manual-test-'+Date.now());fs.mkdirSync(root,{rec
 const packaged=process.env.TEST_PACKAGED==='1';
 const opts={executablePath:path.resolve(packaged?'release/win-unpacked/TimeScreen.exe':'node_modules/electron/dist/electron.exe'),args:packaged?[]:['.'],env:{...process.env,TIMESCREEN_DATA_DIR:root}};
 let app=await electron.launch(opts),page=await app.firstWindow();
-await page.getByRole('button',{name:'创建第一个项目'}).click();await page.locator('#project-name').fill('补录测试');await page.getByRole('button',{name:'创建项目',exact:true}).click();
-await page.getByRole('button',{name:'我的项目',exact:true}).click();await page.getByRole('button',{name:'归档',exact:true}).click();
+await page.getByRole('button',{name:'创建第一个事件'}).click();await page.locator('#project-name').fill('补录测试');await page.getByRole('button',{name:'创建事件',exact:true}).click();
+await page.getByRole('button',{name:'事件与项目',exact:true}).click();await page.getByRole('button',{name:'归档事件',exact:true}).click();
 await page.getByRole('button',{name:'专注记录',exact:true}).click();await page.getByRole('button',{name:'手动添加记录',exact:true}).click();
 const start=new Date();start.setDate(start.getDate()-2);start.setHours(23,50,0,0);
 await page.locator('#manual-start').fill(localDateTime(start));await page.locator('#manual-duration').fill('30');await page.locator('#manual-note').fill('补录跨日专注');

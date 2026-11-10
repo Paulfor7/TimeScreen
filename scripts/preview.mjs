@@ -22,7 +22,7 @@ await page.goto('http://127.0.0.1:5173');
 await page.getByRole('button',{name:'开始专注',exact:true}).first().click();
 fs.mkdirSync('artifacts',{recursive:true});
 await page.screenshot({path:'artifacts/TimeScreen-home.png',fullPage:true,animations:'disabled'});
-for(const [name,file] of [['时间统计','stats'],['我的项目','projects'],['专注记录','records'],['偏好设置','settings']]){
+for(const [name,file] of [['时间统计','stats'],['事件与项目','projects'],['专注记录','records'],['偏好设置','settings']]){
   await page.getByRole('button',{name,exact:true}).click();
   await page.screenshot({path:'artifacts/TimeScreen-'+file+'.png',fullPage:true,animations:'disabled'});
 }

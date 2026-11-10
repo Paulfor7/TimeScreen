@@ -15,7 +15,7 @@ for(let i=0;i<120;i++){
 if(!endpoint)throw Error('Portable application did not expose its test port');
 const browser=await chromium.connectOverCDP(endpoint);
 const page=browser.contexts()[0].pages()[0];
-await page.getByRole('heading',{name:'项目列表',exact:false}).waitFor();
+await page.getByRole('heading',{name:'事件与项目',exact:false}).waitFor();
 await page.getByRole('heading',{name:'当日统计',exact:true}).waitFor();
 console.log('Portable EXE passed: extracted, launched, both home panels rendered.');
 await page.evaluate(()=>window.close()).catch(()=>{});
